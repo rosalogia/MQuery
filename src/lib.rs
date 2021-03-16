@@ -14,8 +14,8 @@ use self::models::StoredMessage;
 use serenity::model::channel::*;
 use serenity::client::Context;
 
+/// Attempts to identify an attachment from its file extension
 fn identify_attachment(attachment: &Attachment) -> String {
-    // Attempt to identify an attachment from its file extension
     let a: Vec<&str> = attachment.filename.split('.').collect();
     if a.len() == 1 {
         String::from("file")
@@ -31,6 +31,12 @@ fn identify_attachment(attachment: &Attachment) -> String {
     }
 }
 
+/// Establishes and returns a connection to a PostgreSQL database
+/// using the connection string in the .env file
+///
+/// # Panics
+/// 
+/// If the connection can't be established, the program will panic.
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
 
@@ -39,6 +45,14 @@ pub fn establish_connection() -> PgConnection {
     PgConnection::establish(&db_url).expect(&format!("Error connecting to {}", db_url))
 }
 
+/// Stores an incoming message in the database to which `conn` is connected.
+/// Function is asynchronous in order to fetch channel name, which must be
+/// awaited. If successful, returns a `usize` containing the amount of records
+/// successfully inserted.
+///
+/// # Errors
+///
+/// If the insertion fails, returns a `diesel::result::Error`
 pub async fn store_message(conn: PgConnection, ctx: &Context, msg: Message) -> QueryResult<usize> {
     use schema::messages;
 

@@ -10,6 +10,7 @@ use serenity::framework::standard::{
     }
 };
 
+use dotenv::dotenv;
 use std::env;
 
 #[group]
@@ -23,6 +24,8 @@ use mquery::*;
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, m: Message) {
+        // Establish a connection and store the incoming message
+        // each time one is sent.
         let connection = establish_connection();
         match store_message(connection, &ctx, m).await {
             Ok(_) => (),
@@ -34,11 +37,12 @@ impl EventHandler for Handler {
 #[tokio::main]
 async fn main() {
     let framework = StandardFramework::new()
-        .configure(|c| c.prefix(">>= ")) // set the bot's prefix to "~"
+        .configure(|c| c.prefix(">>= ")) // set the bot's prefix to ">>="
         .group(&GENERAL_GROUP);
 
     // Login with a bot token from the environment
-    let token = env::var("DISCORD_TOKEN").expect("token");
+    dotenv().ok();
+    let token = env::var("DISCORD_TOKEN").expect("Bot Token must be set");
     let mut client = Client::builder(token)
         .event_handler(Handler)
         .framework(framework)
