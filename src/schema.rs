@@ -7,7 +7,7 @@ table! {
         attachment -> Nullable<Varchar>,
         channel -> Varchar,
         channel_id -> Varchar,
-        time_posted -> Nullable<Timestamp>,
+        time_posted -> Timestamp,
         mentions -> Nullable<Varchar>,
         reactions -> Nullable<Varchar>,
     }

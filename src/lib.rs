@@ -13,6 +13,7 @@ use std::env;
 use self::models::StoredMessage;
 use serenity::model::channel::*;
 use serenity::client::Context;
+use serenity::http::Http;
 
 /// Attempts to identify an attachment from its file extension
 fn identify_attachment(attachment: &Attachment) -> String {
@@ -32,15 +33,19 @@ fn identify_attachment(attachment: &Attachment) -> String {
 }
 
 /// Establishes and returns a connection to a PostgreSQL database
-/// using the connection string in the .env file
+/// using the connection string in the .env file if `None` is given.
+/// Otherwise, used the connection string in `Some`.
 ///
 /// # Panics
 /// 
 /// If the connection can't be established, the program will panic.
-pub fn establish_connection() -> PgConnection {
+pub fn establish_connection(conn_string: Option<&str>) -> PgConnection {
     dotenv().ok();
 
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let db_url = match conn_string {
+        Some(string) => String::from(string),
+        None => env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
+    };
 
     PgConnection::establish(&db_url).expect(&format!("Error connecting to {}", db_url))
 }
@@ -55,6 +60,15 @@ pub fn establish_connection() -> PgConnection {
 /// If the insertion fails, returns a `diesel::result::Error`
 pub async fn store_message(conn: PgConnection, ctx: &Context, msg: Message) -> QueryResult<usize> {
     use schema::messages;
+    
+    let token = env::var("DISCORD_TOKEN").expect("Bot Token must be set");
+    
+    let http = Http::new_with_token(&token);
+    let bot_id = http.get_current_user().await.unwrap().id;
+
+    if msg.author.id.0 == bot_id.0 {
+        return Ok(0)
+    }
 
     let new_message = StoredMessage {
         id: msg.id.0 as i64,

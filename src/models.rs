@@ -1,8 +1,9 @@
 extern crate chrono;
 use super::schema::messages;
 use chrono::NaiveDateTime;
+use diesel::*;
 
-#[derive(Queryable, Insertable)]
+#[derive(Debug, Queryable, Insertable, QueryableByName)]
 #[table_name = "messages"]
 /// Represents a Discord message stored in the database
 pub struct StoredMessage {
